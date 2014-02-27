@@ -8,6 +8,7 @@
 
 #define isspace(c) (((c)==' ')||((c)=='\t'))
 #define STR_SZ 64
+#define LIST_SZ 16
 #define FORK_ERROR -1
 #define CHILD 0
 
@@ -113,37 +114,53 @@ char * parse_token(int * last_token) {
 void execute_command(char * command, int last_token) {
   int status;
   pid_t pid;
-  int c;
-  size_t len = 0, curr_sz = STR_SZ;
+  size_t list_sz = 1, curr_list_sz = LIST_SZ;
   char * args = malloc (STR_SZ * sizeof (*args));
+  char * name = strcpy(malloc (strlen (command) + 1), command);
+  char ** args_list = malloc (LIST_SZ * sizeof (*args_list));
+  char * token;
+  int last = 0;
+
   if (!args) {
     perror("malloc failed!\n");
     free (command);
     command = NULL;
     exit (1);
   }
+  if(!args_list) {
+    perror("malloc failed!\n");
+    free (args);
+    args = NULL;
+    free (command);
+    command = NULL;
+    exit (1);
+  }
   
-  /* get any arguments so they can be passed to execl */
+  args_list[0] = name;
+  /* get any arguments so they can be passed to execv */
   if (!last_token) {
-    while (EOF!=(c = getc (stdin))) {
-      if (c=='\n') break;
-      args[len] = c;
-      ++len;
-      if (len>=curr_sz) {
+    while (!last) {
+      token = parse_token (&last);
+      args_list[list_sz] = token;
+      ++list_sz;
+      if (list_sz>=(curr_list_sz-1)) {
 	int i;
-	char * new_args = malloc (curr_sz * 2 * sizeof (*new_args));
-	if(!new_args) {
-	  perror("malloc failed!\n");
-	  free (command);
-	  command = NULL;
-	  free (args);
+	char ** new_args_list = malloc (curr_list_sz * 2 * sizeof (*new_args_list));
+	curr_list_sz *= 2;
+	if(!new_args_list) {
+	  perror ("Malloc failed!\n");
 	  exit (1);
 	}
-	for(i=0; i<len; ++i) new_args[i] = args[i];
-	free (args);
-	args = new_args;
+
+	for(i=0; i<list_sz; ++i) {
+	  new_args_list[i] = args_list[i];
+	}
+
+	free (args_list);
+	args_list = new_args_list;
       }
     }
+    args_list[list_sz] = (char *) NULL;
   }
 
   pid = fork();
@@ -155,9 +172,7 @@ void execute_command(char * command, int last_token) {
     if (last_token) {
       execl (command, command, (char *) NULL);
     } else {
-      args[len] = '\0';
-      ++len;
-      execl (command, command, args, (char *) NULL);
+      execv (command, args_list);
     }
   } else {
     /* parent */

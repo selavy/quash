@@ -6,16 +6,16 @@
 #include <errno.h>
 #include <string.h>
 
-#define isspace(c) (((c)==' ')||((c)=='\n')||((c)=='\t'))
+#define isspace(c) (((c)==' ')||((c)=='\t'))
 #define STR_SZ 64
 #define FORK_ERROR -1
 #define CHILD 0
 
 void print_environment(char **);
 void process_file( int, char **);
-void interactive(char **envp);
-void execute_command(char * command);
-char * parse_token();
+void interactive(char **);
+void execute_command(char *, int);
+char * parse_token(int*);
 
 int main(int argc, char **argv, char **envp) {
   if( argc > 1 ) {
@@ -38,19 +38,24 @@ void process_file( int argc, char **argv) {
 
 void interactive(char **envp) {
   for(;;) {
-    char * command = parse_token();
+    int last_token;
+    char * command;
+
+    printf("> ");
+    command = parse_token(&last_token);
     if (0==strcmp ("exit",command)) {
       free (command);
       command = NULL;
       break;
     } else if (command[0] == '/') {
-      execute_command (command);
+      execute_command (command, last_token);
     } else {
       int c;
       fprintf (stderr, "Unable to process input: %s\n", command);
       free (command);
       command = NULL;
-      while(EOF!=(c = getc (stdin))) { if('\n'==c) break; }
+      if(!last_token)
+	while(EOF!=(c = getc (stdin))) { if('\n'==c) break; }
     }
     if(command) free(command);
   }
@@ -58,12 +63,12 @@ void interactive(char **envp) {
   exit (0);
 }
 
-char * parse_token() {
+char * parse_token(int * last_token) {
     char * command;
     int c;
     size_t len, curr_sz;
     
-    fprintf (stdout,"> ");
+    *last_token = 0;
     command = malloc (STR_SZ * sizeof (*command));
     if (!command) {
       perror ("Unable to allocate memory for string!\n");
@@ -75,7 +80,13 @@ char * parse_token() {
     len = 0;
     do {
       c = getc (stdin);
-      if (isspace(c)) break;
+      if (c == '\n') {
+	*last_token = 1;
+	break;
+      }
+      else if (isspace(c)) {
+	break;
+      }
       command[len] = c;
       ++len;
       if (len>=curr_sz) {
@@ -99,7 +110,7 @@ char * parse_token() {
     return command;
 }
 
-void execute_command(char * command) {
+void execute_command(char * command, int last_token) {
   int status;
   pid_t pid;
   int c;
@@ -113,23 +124,25 @@ void execute_command(char * command) {
   }
   
   /* get any arguments so they can be passed to execl */
-  while (EOF!=(c = getc (stdin))) {
-    if (c=='\n') break;
-    args[len] = c;
-    ++len;
-    if (len>=curr_sz) {
-      int i;
-      char * new_args = malloc (curr_sz * 2 * sizeof (*new_args));
-      if(!new_args) {
-	perror("malloc failed!\n");
-	free (command);
-	command = NULL;
+  if (!last_token) {
+    while (EOF!=(c = getc (stdin))) {
+      if (c=='\n') break;
+      args[len] = c;
+      ++len;
+      if (len>=curr_sz) {
+	int i;
+	char * new_args = malloc (curr_sz * 2 * sizeof (*new_args));
+	if(!new_args) {
+	  perror("malloc failed!\n");
+	  free (command);
+	  command = NULL;
+	  free (args);
+	  exit (1);
+	}
+	for(i=0; i<len; ++i) new_args[i] = args[i];
 	free (args);
-	exit (1);
+	args = new_args;
       }
-      for(i=0; i<len; ++i) new_args[i] = args[i];
-      free (args);
-      args = new_args;
     }
   }
 
@@ -139,7 +152,7 @@ void execute_command(char * command) {
     free (command);
     exit (1);
   } else if (CHILD==pid) {
-    if (len==0) {
+    if (last_token) {
       execl (command, command, (char *) NULL);
     } else {
       args[len] = '\0';

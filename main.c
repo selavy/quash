@@ -114,30 +114,21 @@ char * parse_token(int * last_token) {
 void execute_command(char * command, int last_token) {
   int status;
   pid_t pid;
+  int i;
   size_t list_sz = 1, curr_list_sz = LIST_SZ;
-  char * args = malloc (STR_SZ * sizeof (*args));
   char * name = strcpy(malloc (strlen (command) + 1), command);
   char ** args_list = malloc (LIST_SZ * sizeof (*args_list));
   char * token;
   int last = 0;
 
-  if (!args) {
-    perror("malloc failed!\n");
-    free (command);
-    command = NULL;
-    exit (1);
-  }
   if(!args_list) {
     perror("malloc failed!\n");
-    free (args);
-    args = NULL;
     free (command);
     command = NULL;
     exit (1);
   }
   
   args_list[0] = name;
-  /* get any arguments so they can be passed to execv */
   if (!last_token) {
     while (!last) {
       token = parse_token (&last);
@@ -181,6 +172,11 @@ void execute_command(char * command, int last_token) {
     if(-1 == waitpid (pid, &status, 0)) {
       fprintf (stderr, "Process encountered an error. ERROR%d", errno);
     }
-    free (args);
+
+    /* free arguments list */
+    for(i=0; i<list_sz; ++i) {
+      free (args_list[i]);
+    }
+    free (args_list);
   }
 }

@@ -160,9 +160,11 @@ void execute_command(char * command, int last_token) {
     free (command);
     exit (1);
   } else if (CHILD==pid) {
+    /* TODO */
+    /* change to execle() and execve() to pass the environment to the child */
     if (last_token) {
       execl (command, command, (char *) NULL);
-    } else {
+      } else  {
       execv (command, args_list);
     }
   } else {

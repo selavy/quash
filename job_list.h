@@ -12,6 +12,8 @@ typedef struct _job_node {
 } job_list;
 
 void traverse_job_list (void (*fn)(job_list*));
+void delete_all_jobs();
+void check_background_processes();
 job_list * remove_job (pid_t pid);
 unsigned int add_job (pid_t pid, char * command);
 

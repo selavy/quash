@@ -4,6 +4,7 @@ static void execute_abs_path (char * command);
 static void execute_search_in_path (char * command);
 static char** get_arguments(char * exec_name);
 static void delete_arguments(char ** args);
+static void execute(char * command, char **args);
 
 void execute_command(char * token) {
   if (token[0] == '/') {
@@ -14,18 +15,15 @@ void execute_command(char * token) {
 }
 
 /* TODO */
-/* add support for fork */
+/* add support for pipe */
 static void execute_abs_path (char * command) {
-  pid_t pid;
-  int sync_pipe[2];
   char ** args;
-  unsigned int jobid;
-
-  if(-1 == pipe(sync_pipe)) {
-    perror("pipe()");
-  }
-
   args = get_arguments(command);
+  execute(command, args);
+}
+
+static void execute(char * command, char **args) {
+  pid_t pid;
   pid = fork();
   if(-1 == pid) {
     perror("error forking");
@@ -33,68 +31,21 @@ static void execute_abs_path (char * command) {
     return;
   } else if(!pid) {
     /* child */
-    close (sync_pipe[0]);
-    close (sync_pipe[1]);
-    if (!exec_in_background) {
-      /* execute in foreground */
-      if (-1 == execv (command, args)) {
-	fprintf (stderr, "unable to execute %s\n", command);
-	exit (0);
-      }
-    } else {
-      /* execute in background */
-      pid_t pid2;
-      close (sync_pipe[0]);
-      pid2 = fork();
-      jobid = add_job (pid2, command);
-      if(jobid) {
-	printf ("[%d] %d running in background\n", jobid, pid2);
-      }
-      if (-1 == pid2) {
-	close (sync_pipe[1]);
-	perror("error forking\n");
-	exit (1);
-      } else if(!pid2) {
-	/* child - child */
-	close (sync_pipe[1]);
-	if (-1 == execv (command, args)) {
-	  fprintf (stderr, "unable to execute %s\n", command);
-	  exit (0);
-	}
-      } else {
-	/* child - parent */
-	int status;
-
-	status = 1;
-	write( sync_pipe[1], &status, sizeof(int));
-	close (sync_pipe[1]);
-
-	if(-1 == waitpid(pid, &status, 0)) {
-	  fprintf (stderr, "problems executing %s\n", command);
-	} else {
-	  if(jobid) {
-	    job_list * job = remove_job (pid2);
-	    if(job) { free (job->command); free (job); }
-	    printf ("[%d] %d finished %s\n", jobid, pid2, command);
-	  }
-	}
-	exit (0);
-      }
+    if (-1 == execv (command, args)) {
+      fprintf (stderr, "unable to execute %s\n", command);
       exit (0);
     }
   } else {
     /* parent */
     int status;
-    close (sync_pipe[1]);
-    if(!exec_in_background) {
+    
+    if(exec_in_background) {
+      add_job (pid, command);
+    } else {
       if(-1 == waitpid(pid, &status, 0)) {
 	fprintf (stderr, "problems executing %s\n", command);
       }
-    } else {
-      while( read( sync_pipe[0], &status, sizeof(int) ) == -1);
     }
-    close (sync_pipe[0]);
-
   }
 }
 
@@ -174,4 +125,3 @@ static char ** get_arguments(char * exec_name) {
   args[args_sz] = (char *) NULL; /* last argument is always NULL */
   return args;
 }
-

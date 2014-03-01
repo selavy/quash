@@ -20,6 +20,7 @@ static int is_sentinel (char c, char * sentinels) {
 }
 
 int is_last_token() {
+  if(feof(pIn)) last_token = 1;
   return last_token;
 }
 
@@ -32,7 +33,7 @@ char * parse_token (char * sentinels) {
   if (!token) { perror("Malloc failed!\n"); return NULL; }
 
   for(;;) {
-    c = getc (stdin);
+    c = getc (pIn);
     if (is_sentinel(c, sentinels)) break;
     
     token[token_sz++] = c;

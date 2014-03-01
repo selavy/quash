@@ -13,7 +13,7 @@ void set() {
     var = parse_token ("=\n\t\r ");
     if (var) break;
   } while (!is_last_token());
-  printf ("var = %s\n", var);
+  fprintf (stdout, "var = %s\n", var);
 
   if (!var) return;
   

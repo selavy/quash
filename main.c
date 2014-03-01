@@ -5,13 +5,40 @@
 #include "set.h"
 #include "execute_command.h"
 
-#define print_prompt() printf("> ");
+#define print_prompt() fprintf(pOut, "> ");
+
+FILE * pIn;
+FILE * pOut;
 
 int main(int argc, char **argv, char **envp) {
   char * token;
 
-  print_prompt();
-  for(;;) {
+  pOut = stdout;
+  if(argc > 2) {
+    if (0 == strcmp( argv[1],  "<")) {
+      if (argc > 3) {
+	FILE * pIn = fopen (argv[2], "r");
+	if (!pIn) {
+	  perror ("could not find input file!");
+	}
+
+	pOut = fopen("/dev/null", "w");
+      } else {
+	perror ("no file specified");
+	exit (0);
+      }
+    }
+    else {
+      perror ("incorrect arugments");
+      exit (0);
+    }
+  } else {
+    pIn = stdin;
+  }
+
+  for(;!feof(pIn);) {
+    check_background_processes();
+    print_prompt();
     token = parse_token( NULL );
 #ifdef DEBUG
     /* printf ("parsed %s\n", token); */
@@ -25,9 +52,9 @@ int main(int argc, char **argv, char **envp) {
     else                                 execute_command( token );
     free (token);
     fflush (stdin);
-    print_prompt();
   }
 
+  delete_all_jobs();
   if (token) free (token);
   return 0;
 }

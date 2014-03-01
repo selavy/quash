@@ -7,11 +7,51 @@ static job_list * head = NULL;
 void traverse_job_list (void (*fn)(job_list*)) {
   job_list * p = head;
 #ifdef DEBUG
-  printf("JOBS:\n");
+  /*  printf("JOBS:\n"); */
 #endif
   while(p) {
     fn(p);
     p = p->next;
+  }
+}
+
+void delete_all_jobs() {
+  job_list * p = head;
+  job_list * next;
+  int status;
+  while(p) {
+    if(-1 == waitpid(p->pid, &status, 0)) {
+      printf("Error in %s\n", p->command);
+    }
+    next = p->next;
+    free (p->command);
+    free (p);
+    p = next;
+  }
+}
+
+void check_background_processes() {
+  job_list * p = head;
+  while(p) {
+    /*int result = kill(p->pid, 0); 
+    printf("result = %d\n", result);
+    if ((-1 == result) && (errno == ESRCH)) { */
+    int status;
+    if(waitpid(p->pid, &status, WNOHANG) > 0) {
+      /* process no longer exists */
+      job_list * prev = p->prev;
+      job_list * next = p->next;
+      printf ("[%d] %d finished %s\n", p->job_id, p->pid, p->command);
+      free (p->command);
+      
+      if (prev) prev->next = next;
+      if (next) next->prev = prev;
+      if (tail == p) tail = p->prev;
+      if (head == p) head = p->next;
+      free (p);
+      p = next;
+    }
+    else p = p->next;
   }
 }
 
@@ -25,19 +65,10 @@ job_list * remove_job (pid_t pid) {
       job_list * next = p->next;
       retVal = p;
 
-      if(prev) {
-	prev->next = next;
-      }
-      if(next) {
-	next->prev= prev;
-      }
-      if(tail == p) {
-	tail = p->prev;
-      }
-      if(head == p) {
-	head = p->next;
-      }
-
+      if(prev) prev->next = next;
+      if(next) next->prev= prev;
+      if(tail == p) tail = p->prev;
+      if(head == p) head = p->next;
       p = p->prev;
     }
   }

@@ -9,27 +9,25 @@ static void change_to (char * dir) {
 }
 
 void change_dir() {
-  char * token, *check_error;
+  char * token;
 
-#ifdef DEBUG
-  printf ("change_dir()\n");
-#endif
-
-  token = parse_token (NULL);
-  if (!token) {
-    token = malloc (sizeof (*token) * strlen ("/home/peter") + 1);
+  if (is_last_token()) {
+    char * home = getenv("HOME");
+    token = malloc (sizeof (*token) * strlen (home) + 1);
     if (!token) {
       perror ("malloc failed!");
     }
-    strcpy (token, "/home/peter");
+    strcpy (token, home);
+    change_to (token);
+    return;
+  }
+  else {
+    token = parse_token (NULL);
+    if (!is_last_token()) {
+      perror ("too many arguments given!");
+      free (token);
+    }
+    
     change_to (token);
   }
-  check_error = parse_token (NULL);
-  if (check_error) {
-    perror ("too many arguments given!");
-    free (token);
-    free (check_error);
-  }
-
-  change_to (token);
 }

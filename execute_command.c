@@ -4,7 +4,7 @@ static void execute_abs_path (char * command);
 static void execute_search_in_path (char * command);
 static char** get_arguments(char * exec_name);
 static void delete_arguments(char ** args);
-static void execute(char * command, char **args);
+static void execute(char ** command, char **args);
 
 void execute_command(char * token) {
   if (token[0] == '/') {
@@ -18,11 +18,14 @@ void execute_command(char * token) {
 /* add support for pipe */
 static void execute_abs_path (char * command) {
   char ** args;
+  char ** cmd = malloc(sizeof(*cmd) * 2);
+  cmd[0] = command; cmd[1] = (char *) NULL;
   args = get_arguments(command);
-  execute(command, args);
+  execute(cmd, args);
+  free (cmd);
 }
 
-static void execute(char * command, char **args) {
+static void execute(char ** command, char **args) {
   pid_t pid;
   pid = fork();
   if(-1 == pid) {
@@ -31,28 +34,29 @@ static void execute(char * command, char **args) {
     return;
   } else if(!pid) {
     /* child */
-    if (-1 == execv (command, args)) {
-      fprintf (stderr, "unable to execute %s\n", command);
-      exit (0);
-    }
+    char ** cmd = command;
+    while(*cmd && (-1 == execve (*cmd, args, get_env()))) ++cmd;
+    fprintf (stderr, "unable to execute %s\n", command[0]);
+    exit (0);
+    
   } else {
     /* parent */
     int status;
     
     if(exec_in_background) {
-      add_job (pid, command);
+      /* in background, so don't wait for it, just add it to the jobs list */
+      add_job (pid, command[0]);
     } else {
+      /* if in foreground, then wait for it to finish */
       if(-1 == waitpid(pid, &status, 0)) {
-	fprintf (stderr, "problems executing %s\n", command);
+	fprintf (stderr, "problems executing %s\n", command[0]);
       }
     }
   }
 }
 
 static void execute_search_in_path (char * command) {
-#ifdef DEBUG
-  printf("execute_search_in_path()\n");
-#endif
+
 }
 
 static void delete_arguments(char ** args) {

@@ -13,8 +13,10 @@
 
 void set_home (char*);
 void set_path (char*);
+void set_env (char **);
 char * get_home();
 char * get_path();
+char ** get_env();
 
 extern FILE * pIn;
 

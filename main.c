@@ -1,6 +1,4 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
+#include "general.h"
 #include "parse_token.h"
 #include "jobs.h"
 #include "change_dir.h"
@@ -17,7 +15,7 @@ int main(int argc, char **argv, char **envp) {
 #ifdef DEBUG
     printf ("parsed %s\n", token);
 #endif
-
+    
     if     (0 == strcmp (token, "quit")) break;
     else if(0 == strcmp (token, "exit")) break;
     else if(0 == strcmp (token, "jobs")) jobs();
@@ -25,7 +23,7 @@ int main(int argc, char **argv, char **envp) {
     else if(0 == strcmp (token, "cd"  )) change_dir();
     else                                 execute_command( token );
     free (token);
-    /* fflush (stdin); */
+    fflush (stdin);
     print_prompt();
   }
 

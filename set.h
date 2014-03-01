@@ -1,9 +1,8 @@
 #ifndef _SET_
 #define _SET_
 
-#ifdef DEBUG
-#include <stdio.h>
-#endif
+#include "general.h"
+#include "parse_token.h"
 
 void set();
 

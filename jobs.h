@@ -1,9 +1,7 @@
 #ifndef _JOBS_
 #define _JOBS_
 
-#ifdef DEBUG
-#include <stdio.h>
-#endif
+#include "general.h"
 
 void jobs();
 

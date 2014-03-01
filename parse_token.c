@@ -1,7 +1,6 @@
 #include "parse_token.h"
 
 static int last_token = 0;
-
 static int is_sentinel (char c, char * sentinels);
 
 static int is_sentinel (char c, char * sentinels) {

@@ -29,7 +29,7 @@ static void execute_abs_path (char * command) {
     /* child */
     if(-1 == execv (command, args)) {
       fprintf (stderr, "unable to execute %s\n", command);
-      return;
+      exit(0);
     }
   } else {
     /* parent */

@@ -1,5 +1,5 @@
 #include "execute_command.h"
-
+static int exec_in_background = 0;
 static void execute_abs_path (char * command);
 static void execute_search_in_path (char * command);
 static char** get_arguments(char * exec_name);
@@ -17,7 +17,13 @@ void execute_command(char * token) {
 /* add support for fork */
 static void execute_abs_path (char * command) {
   pid_t pid;
+  int sync_pipe[2];
   char ** args;
+  unsigned int jobid;
+
+  if(-1 == pipe(sync_pipe)) {
+    perror("pipe()");
+  }
 
   args = get_arguments(command);
   pid = fork();
@@ -27,18 +33,68 @@ static void execute_abs_path (char * command) {
     return;
   } else if(!pid) {
     /* child */
-    if(-1 == execv (command, args)) {
-      fprintf (stderr, "unable to execute %s\n", command);
-      exit(0);
+    close (sync_pipe[0]);
+    close (sync_pipe[1]);
+    if (!exec_in_background) {
+      /* execute in foreground */
+      if (-1 == execv (command, args)) {
+	fprintf (stderr, "unable to execute %s\n", command);
+	exit (0);
+      }
+    } else {
+      /* execute in background */
+      pid_t pid2;
+      close (sync_pipe[0]);
+      pid2 = fork();
+      jobid = add_job (pid2, command);
+      if(jobid) {
+	printf ("[%d] %d running in background\n", jobid, pid2);
+      }
+      if (-1 == pid2) {
+	close (sync_pipe[1]);
+	perror("error forking\n");
+	exit (1);
+      } else if(!pid2) {
+	/* child - child */
+	close (sync_pipe[1]);
+	if (-1 == execv (command, args)) {
+	  fprintf (stderr, "unable to execute %s\n", command);
+	  exit (0);
+	}
+      } else {
+	/* child - parent */
+	int status;
+
+	status = 1;
+	write( sync_pipe[1], &status, sizeof(int));
+	close (sync_pipe[1]);
+
+	if(-1 == waitpid(pid, &status, 0)) {
+	  fprintf (stderr, "problems executing %s\n", command);
+	} else {
+	  if(jobid) {
+	    job_list * job = remove_job (pid2);
+	    if(job) { free (job->command); free (job); }
+	    printf ("[%d] %d finished %s\n", jobid, pid2, command);
+	  }
+	}
+	exit (0);
+      }
+      exit (0);
     }
   } else {
     /* parent */
-    /* TODO */
-    /* Implement background/foreground */
     int status;
-    if(-1 == waitpid(pid, &status, 0)) {
-      fprintf (stderr, "problems executing %s\n", command);
+    close (sync_pipe[1]);
+    if(!exec_in_background) {
+      if(-1 == waitpid(pid, &status, 0)) {
+	fprintf (stderr, "problems executing %s\n", command);
+      }
+    } else {
+      while( read( sync_pipe[0], &status, sizeof(int) ) == -1);
     }
+    close (sync_pipe[0]);
+
   }
 }
 
@@ -75,7 +131,13 @@ static char ** get_arguments(char * exec_name) {
   }
   strcpy (args[0], exec_name);
 
+  /* by default execute in foreground */
+  exec_in_background = 0;
   while (!is_last_token() && (NULL != (token = parse_token (NULL)))) {
+    if(0 == strcmp("&", token)) {
+      exec_in_background = 1;
+      continue;
+    }
     args[args_sz] = malloc (sizeof (**args) * (strlen (token) + 1));
     if (!args[args_sz]) {
       int i;

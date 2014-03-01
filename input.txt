@@ -1,6 +1,2 @@
-/bin/ls
-/bin/echo "first"
-/bin/echo "second"
-/bin/echo "third"
-jobs
-/bin/ls -la &
+pwd
+quit

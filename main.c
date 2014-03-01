@@ -31,8 +31,8 @@ int main(int argc, char **argv, char **envp) {
     print_prompt();
     token = parse_token( NULL );
     if(!token) { print_prompt(); continue; }
-    else if (0 == strcmp (token, "quit")) break;
-    else if (0 == strcmp (token, "exit")) break;
+    else if (0 == strcmp (token, "quit")) { free (token); token = NULL; break; }
+    else if (0 == strcmp (token, "exit")) { free (token); token = NULL; break; }
     else if (0 == strcmp (token, "jobs")) jobs();
     else if (0 == strcmp (token, "set" )) set();
     else if (0 == strcmp (token, "cd"  )) change_dir();

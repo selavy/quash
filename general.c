@@ -7,7 +7,7 @@ void set_home (char * str) {
 
   while(*p) {
     char * tok = strtok (*p, "=");
-    if (0 == strcmp(tok, "PATH")) {
+    if (0 == strcmp(tok, "HOME")) {
       char * newpath = malloc (sizeof (*newpath) * (strlen (str) + 6));
       char * addspot;
       if(!newpath) { perror ("malloc failed!"); return; }

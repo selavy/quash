@@ -5,6 +5,7 @@ static void execute_search_in_path (char * command);
 static char** get_arguments(char * exec_name);
 static void delete_arguments(char ** args);
 static void execute(char ** command, char **args);
+static int STDOUT_copy = -1;
 static int fd = -1;
 static int old_fd = -1;
 
@@ -76,6 +77,12 @@ static void execute_search_in_path (char * command) {
 
 static void execute(char ** command, char **args) {
   pid_t pid;
+  if ((fd < 0) && (old_fd>0)) {
+    close (old_fd);
+    old_fd = -1;
+    printf("Repairing STDOUT\n");
+    dup2(STDOUT_copy, STDOUT_FILENO);
+  }
   pid = fork();
   if(-1 == pid) {
     perror("error forking");
@@ -84,7 +91,7 @@ static void execute(char ** command, char **args) {
   } else if(!pid) {
     /* child */
     char ** cmd = command;
-    if(fd>0) { dup2(fd, STDOUT_FILENO); fd = -1; old_fd = fd; }
+    if(fd>0) dup2(fd, STDOUT_FILENO);
     while(*cmd && (-1 == execve (*cmd, args, get_env()))) ++cmd;
     fprintf (stderr, "unable to execute %s\n", args[0]);
     exit (0);
@@ -92,7 +99,8 @@ static void execute(char ** command, char **args) {
   } else {
     /* parent */
     int status;
-    
+
+    if(fd>0) { STDOUT_copy = dup(STDOUT_FILENO); fd = -1; old_fd = fd; }
     if(exec_in_background) {
       /* in background, so don't wait for it, just add it to the jobs list */
       add_job (pid, command[0]);

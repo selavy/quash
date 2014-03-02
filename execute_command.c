@@ -145,7 +145,7 @@ static char ** get_arguments(char * exec_name) {
       char * filename = parse_token( NULL );
       int pFile;
       if(!filename) { perror ("Must give file to redirect output!"); continue; }
-      pFile = open (filename, O_WRONLY | O_CREAT, S_IRWXU);
+      pFile = open (filename, O_WRONLY | O_CREAT, S_IWUSR | S_IRUSR );
       if (pFile<0) { perror("open"); continue; }
       fd = pFile;
       printf("New file descriptor created %s => %d\n", filename, fd);

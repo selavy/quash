@@ -5,6 +5,8 @@ static void execute_search_in_path (char * command);
 static char** get_arguments(char * exec_name);
 static void delete_arguments(char ** args);
 static void execute(char ** command, char **args);
+static int fd = -1;
+static int old_fd = -1;
 
 void execute_command(char * token) {
   if (token[0] == '/') {
@@ -82,6 +84,7 @@ static void execute(char ** command, char **args) {
   } else if(!pid) {
     /* child */
     char ** cmd = command;
+    if(fd>0) { dup2(fd, STDOUT_FILENO); fd = -1; old_fd = fd; }
     while(*cmd && (-1 == execve (*cmd, args, get_env()))) ++cmd;
     fprintf (stderr, "unable to execute %s\n", args[0]);
     exit (0);
@@ -134,8 +137,23 @@ static char ** get_arguments(char * exec_name) {
   while (!is_last_token() && (NULL != (token = parse_token (NULL)))) {
     if(0 == strcmp("&", token)) {
       exec_in_background = 1;
+      free (token);
       continue;
     }
+
+    if (0 == strcmp(">", token)) {
+      char * filename = parse_token( NULL );
+      int pFile;
+      if(!filename) { perror ("Must give file to redirect output!"); continue; }
+      pFile = open (filename, O_WRONLY | O_CREAT, S_IRWXU);
+      if (pFile<0) { perror("open"); continue; }
+      fd = pFile;
+      printf("New file descriptor created %s => %d\n", filename, fd);
+      free (token);
+      free (filename);
+      continue;
+    }
+
     args[args_sz] = malloc (sizeof (**args) * (strlen (token) + 1));
     if (!args[args_sz]) {
       int i;

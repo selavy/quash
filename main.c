@@ -12,14 +12,14 @@ FILE * pOut;
 
 int main(int argc, char **argv, char **envp) {
   char * token;
-  pOut = stdout;
   pIn = stdin;
+  pOut = stdout;
   set_env(envp);
   while (!feof (pIn)) {
     check_background_processes();
     print_prompt();
     token = parse_token( NULL );
-    if(!token) { print_prompt(); continue; }
+    if(!token) { continue; }
     else if (0 == strcmp (token, "quit")) { free (token); token = NULL; break; }
     else if (0 == strcmp (token, "exit")) { free (token); token = NULL; break; }
     else if (0 == strcmp (token, "jobs")) jobs();

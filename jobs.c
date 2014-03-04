@@ -10,6 +10,6 @@ void jobs() {
 #ifdef DEBUG
   /*  printf("jobs()\n"); */
 #endif
-
+  check_background_processes();
   traverse_job_list(&printer);
 }

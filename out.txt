@@ -1,6 +1,5 @@
-
-wd
-echo "hello" | more
+This is a test!
+ | more
 cd ../..
 ls | more
 echo "try this" &

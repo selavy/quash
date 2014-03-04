@@ -218,11 +218,15 @@ static char ** get_arguments(char * exec_name) {
 
     if (0 == strcmp (">", token)) {
       int pFile;
-      char * filename = parse_token (NULL);
-      if (!filename) { perror ("Must give file to redirect output!"); continue; }
-      pFile = open (filename, O_WRONLY | O_CREAT, S_IWUSR | S_IRUSR);
-      if (pFile<0) { perror ("open"); continue; }
-      fd = pFile;
+      char * filename;
+      filename = parse_token (NULL);
+      if (!filename) { perror ("Must give file to redirect output!"); continue; }       
+      if(fd>0) { perror ("already have a output redirection specified"); }
+      else { 
+	pFile = open (filename, O_WRONLY | O_CREAT, S_IWUSR | S_IRUSR);
+	if (pFile<0) { perror ("open"); free (filename); continue; }
+	fd = pFile;
+      }
       free (token);
       free (filename);
       continue;
@@ -232,9 +236,12 @@ static char ** get_arguments(char * exec_name) {
       int pFile;
       char * filename = parse_token (NULL);
       if (!filename) { perror ("Must give file to redirect input!"); continue; }
-      pFile = open (filename, O_RDONLY, 0);
-      if (pFile < 0) { perror ("open"); continue; }
-      input_redirect_fd = pFile;
+      if (input_redirect_fd>0) { perror ("Already have an input redirection specified"); }
+      else {
+	pFile = open (filename, O_RDONLY, 0);
+	if (pFile < 0) { perror ("open"); free (filename); continue; }
+	input_redirect_fd = pFile;
+      }
       free (token);
       free (filename);
       continue;

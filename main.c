@@ -5,6 +5,7 @@
 #include "change_dir.h"
 #include "set.h"
 #include "execute_command.h"
+#include "mykill.h"
 
 #define print_prompt() fprintf(pOut, "> ");
 
@@ -28,6 +29,7 @@ int main(int argc, char **argv, char **envp) {
     else if (0 == strcmp (token, "jobs")) jobs();
     else if (0 == strcmp (token, "set" )) set();
     else if (0 == strcmp (token, "cd"  )) change_dir();
+    /* else if (0 == strcmp (token, "kill" )) mykill(); */
     else                                 execute_command( token );
     free (token);
     fflush (pIn);

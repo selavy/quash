@@ -1,7 +1,7 @@
 CC = gcc
 DEBUG = -DDEBUG -g
 CFLAGS = -Wall -Werror -ansi -pedantic $(DEBUG)
-OBJS = main.o parse_token.o jobs.o set.o change_dir.o execute_command.o general.o job_list.o
+OBJS = main.o parse_token.o jobs.o set.o change_dir.o execute_command.o general.o job_list.o mykill.o
 
 quash: $(OBJS)
 	$(CC) $(CFLAGS) -o quash $(OBJS)
@@ -21,6 +21,8 @@ general.o: general.h general.c
 	$(CC) $(CFLAGS) -c general.c
 job_list.o: job_list.h job_list.c
 	$(CC) $(CFLAGS) -c job_list.c
+mykill.o: mykill.h mykill.c
+	$(CC) $(CFLAGS) -c mykill.c
 .PHONY:clean
 clean:
 	rm -rf *.o quash *~

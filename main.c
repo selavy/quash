@@ -1,4 +1,5 @@
 #include "general.h"
+#include <ctype.h>
 #include "parse_token.h"
 #include "jobs.h"
 #include "change_dir.h"
@@ -10,6 +11,8 @@
 FILE * pIn;
 FILE * pOut;
 
+int is_comment (char * token);
+
 int main(int argc, char **argv, char **envp) {
   char * token;
   pIn = stdin;
@@ -19,7 +22,7 @@ int main(int argc, char **argv, char **envp) {
     check_background_processes();
     print_prompt();
     token = parse_token( NULL );
-    if(!token) { continue; }
+    if(!token)                            continue;
     else if (0 == strcmp (token, "quit")) { free (token); token = NULL; break; }
     else if (0 == strcmp (token, "exit")) { free (token); token = NULL; break; }
     else if (0 == strcmp (token, "jobs")) jobs();
@@ -27,10 +30,19 @@ int main(int argc, char **argv, char **envp) {
     else if (0 == strcmp (token, "cd"  )) change_dir();
     else                                 execute_command( token );
     free (token);
-    fflush (stdin);
+    fflush (pIn);
   }
 
   delete_all_jobs();
   if (token) free (token);
   return 0;
+}
+
+int is_comment (char * token) {
+  char * c = token;
+  while((*c != '\0') && isspace (*c)) {
+    ++c;
+  }
+
+  return (*c == '#') ? 1 : 0;
 }

@@ -13,19 +13,8 @@ FILE * pOut;
 int main(int argc, char **argv, char **envp) {
   char * token;
   pOut = stdout;
-  if(argc > 2) {
-    if (0 == strcmp( argv[1],  "<")) {
-      if (argc > 3) {
-	pIn = fopen (argv[2], "r");
-	if (!pIn) { perror ("could not find input file!"); exit (0); }
-	pOut = fopen("/dev/null", "w");
-      } else { perror ("no file specified");	exit (0); }
-    }
-    else { perror ("incorrect arugments");      exit (0); }
-  } else { pIn = stdin; }
-
+  pIn = stdin;
   set_env(envp);
-  
   while (!feof (pIn)) {
     check_background_processes();
     print_prompt();

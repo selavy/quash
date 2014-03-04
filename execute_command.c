@@ -1,7 +1,10 @@
 #include "execute_command.h"
 static int STDOUT_copy = -1;
+static int STDIN_copy = -1;
 static int fd = -1;
 static int old_fd = -1;
+static int input_redirect_fd = -1;
+static int old_input_redirect_fd = -1;
 static int doing_pipe = 0;
 static int exec_first_pipe_command = 0;
 static int exec_second_pipe_command = 0;
@@ -131,6 +134,12 @@ static void execute(char ** command, char **args) {
     dup2 (STDOUT_copy, STDOUT_FILENO);
   }
 
+  if ((input_redirect_fd<0) && (old_input_redirect_fd>0)) {
+    close (old_input_redirect_fd);
+    old_input_redirect_fd = -1;
+    dup2 (STDIN_copy, STDIN_FILENO);
+  }
+
   if (exec_first_pipe_command) {
     if (-1 == pipe (pipefd)) { perror ("pipe"); return; }
   }
@@ -143,7 +152,8 @@ static void execute(char ** command, char **args) {
   } else if (!pid) {
     /* child */
     char ** cmd = command;
-    if (fd>0) dup2(fd, STDOUT_FILENO);
+    if (fd>0) dup2 (fd, STDOUT_FILENO);
+    if (input_redirect_fd>0) dup2 (input_redirect_fd, STDIN_FILENO);
     if (exec_first_pipe_command) {
       dup2 (pipefd[1], STDOUT_FILENO);
       close (pipefd[0]); close (pipefd[1]);
@@ -157,7 +167,8 @@ static void execute(char ** command, char **args) {
   } else {
     /* parent */
     int status;
-    if (fd>0) { STDOUT_copy = dup(STDOUT_FILENO); fd = -1; old_fd = fd; }
+    if (fd>0) { STDOUT_copy = dup (STDOUT_FILENO); fd = -1; old_fd = fd; }
+    if (input_redirect_fd>0) { STDIN_copy = dup (STDIN_FILENO); input_redirect_fd = -1; old_input_redirect_fd = input_redirect_fd; }
     if (exec_second_pipe_command) { close (pipefd[0]); close (pipefd[1]); }
     if (!exec_first_pipe_command) {
       if (exec_in_background) add_job (pid, command[0]);
@@ -205,19 +216,31 @@ static char ** get_arguments(char * exec_name) {
       continue;
     }
 
-    if (0 == strcmp(">", token)) {
+    if (0 == strcmp (">", token)) {
       int pFile;
-      char * filename = parse_token( NULL );
-      if(!filename) { perror ("Must give file to redirect output!"); continue; }
-      pFile = open (filename, O_WRONLY | O_CREAT, S_IWUSR | S_IRUSR );
-      if (pFile<0) { perror("open"); continue; }
+      char * filename = parse_token (NULL);
+      if (!filename) { perror ("Must give file to redirect output!"); continue; }
+      pFile = open (filename, O_WRONLY | O_CREAT, S_IWUSR | S_IRUSR);
+      if (pFile<0) { perror ("open"); continue; }
       fd = pFile;
       free (token);
       free (filename);
       continue;
     }
 
-    if (0 == strcmp("|", token)) {
+    if (0 == strcmp ("<", token)) {
+      int pFile;
+      char * filename = parse_token (NULL);
+      if (!filename) { perror ("Must give file to redirect input!"); continue; }
+      pFile = open (filename, O_RDONLY, 0);
+      if (pFile < 0) { perror ("open"); continue; }
+      input_redirect_fd = pFile;
+      free (token);
+      free (filename);
+      continue;
+    }
+
+    if (0 == strcmp ("|", token)) {
       args[args_sz] = (char *) NULL;
       doing_pipe = 1;
       return args;

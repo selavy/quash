@@ -6,6 +6,6 @@
 #include <string.h>
 #include "parse_token.h"
 
-void change_dir();
+extern void change_dir();
 
 #endif

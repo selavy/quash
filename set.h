@@ -4,6 +4,6 @@
 #include "general.h"
 #include "parse_token.h"
 
-void set();
+extern void set();
 
 #endif

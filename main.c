@@ -18,6 +18,7 @@ int main(int argc, char **argv, char **envp) {
   char * token;
   pIn = stdin;
   pOut = stdout;
+
   set_env(envp);
   while (!feof (pIn)) {
     check_background_processes();
@@ -29,7 +30,7 @@ int main(int argc, char **argv, char **envp) {
     else if (0 == strcmp (token, "jobs")) jobs();
     else if (0 == strcmp (token, "set" )) set();
     else if (0 == strcmp (token, "cd"  )) change_dir();
-    /* else if (0 == strcmp (token, "kill" )) mykill(); */
+    else if (0 == strcmp (token, "kill" )) mykill();
     else                                 execute_command( token );
     free (token);
     fflush (pIn);

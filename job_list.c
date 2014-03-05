@@ -6,9 +6,6 @@ static job_list * head = NULL;
 
 void traverse_job_list (void (*fn)(job_list*)) {
   job_list * p = head;
-#ifdef DEBUG
-  /*  printf("JOBS:\n"); */
-#endif
   while(p) {
     fn(p);
     p = p->next;
@@ -83,7 +80,8 @@ unsigned int add_job (pid_t pid, char * command) {
   }
 
   node->next = NULL;
-  node->job_id = next_job_id++;
+  node->job_id = next_job_id;
+  next_job_id = (next_job_id + 1) % UINT_MAX;
   node->pid = pid;
   node->command = malloc (sizeof (*(node->command)) * (strlen (command) + 1));
   if(!node->command) {
@@ -100,4 +98,13 @@ unsigned int add_job (pid_t pid, char * command) {
   tail = node;
 
   return node->job_id;
+}
+
+pid_t get_job_by_job_id (int job_id) {
+  job_list * p = head;
+  while (p) {
+    if (p->job_id == job_id) return p->pid;
+    p = p->next;
+  }  
+  return -1;
 }

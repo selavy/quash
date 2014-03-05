@@ -7,6 +7,6 @@
 
 #define INIT_ARGS_LIST_SZ 8
 
-void execute_command(char * token);
+extern void execute_command(char * token);
 
 #endif

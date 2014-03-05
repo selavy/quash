@@ -13,7 +13,7 @@
  * returns: c-string with the token or NULL if no token
  * notes:
  */
-char * parse_token (char * sentinels);
+extern char * parse_token (char * sentinels);
 
 /*
  * function: is_last_token()
@@ -23,6 +23,6 @@ char * parse_token (char * sentinels);
  * returns: TRUE or FALSE as to whether last token was the end of a line or file
  * notes:
  */
-int is_last_token();
+extern int is_last_token();
 
 #endif

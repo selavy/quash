@@ -4,6 +4,6 @@
 #include "general.h"
 #include "job_list.h"
 
-void jobs();
+extern void jobs();
 
 #endif

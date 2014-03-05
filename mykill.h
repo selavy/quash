@@ -2,8 +2,9 @@
 #define _MYKILL_
 
 #include "general.h"
+#include "job_list.h"
 #include "parse_token.h"
 
-void mykill();
+extern void mykill();
 
 #endif

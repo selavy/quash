@@ -13,12 +13,12 @@
 #include <sys/types.h>
 #include <errno.h>
 
-void set_home (char*);
-void set_path (char*);
-void set_env (char **);
-char * get_home();
-char * get_path();
-char ** get_env();
+extern void set_home (char*);
+extern void set_path (char*);
+extern void set_env (char **);
+extern char * get_home();
+extern char * get_path();
+extern char ** get_env();
 
 extern FILE * pIn;
 

@@ -59,5 +59,15 @@ quash
 Background execution does not work for jobs, kill, set, or cd because it doesn't
 make any sense to do them in the background (though you can in a bash shell).
 
-
+The implementation is most easily thought of as a state machine, once a token
+is recognized it goes into that command's "state".  I began a better implementation,
+using Yacc and Lex, but wasn't able to finish it in time.  My implementation
+of pipes in this version is very convuluted because there are so many global
+flags that are being set and reset to make the pipe work correctly, and this
+is why I don't have more than one pipe implemented.  In the Yacc and Lex
+version I have the capability to execute more than one pipe, but I was struggling
+to figure out how to write the grammar correctly to let me set up the pipes
+and read the input correctly.  The biggest problem with Yacc and Lex is that
+I don't know how to properly recover from errors--it quits as soon as a 
+malformed input is received.
 

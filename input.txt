@@ -1,8 +1,0 @@
-
-wd
-echo "hello" | more
-cd ../..
-ls | more
-echo "try this" &
-echo "after background command"
-quit

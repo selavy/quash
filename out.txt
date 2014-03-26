@@ -1,7 +1,0 @@
-This is a test!
- | more
-cd ../..
-ls | more
-echo "try this" &
-echo "after background command"
-quit
